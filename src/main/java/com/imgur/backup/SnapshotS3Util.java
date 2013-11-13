@@ -254,7 +254,9 @@ public class SnapshotS3Util extends Configured implements Tool
         
         try {
             //Configuration config = HBaseConfiguration.create();
-            Configuration config = new Configuration();
+            // Configuration config = new Configuration();
+            Configuration config = getNormalConfiguration();
+            
             String s3Url = getS3Url(true);
             String hdfsUrl = config.get("fs.defaultFS");
             
@@ -277,11 +279,11 @@ public class SnapshotS3Util extends Configured implements Tool
             };
 
             // Override dfs configuration to point to S3
-            config.set("fs.default.name", s3protocol + accessKey + ":" + accessSecret + "@" + bucketName);
-            config.set("fs.defaultFS", s3protocol + accessKey + ":" + accessSecret  + "@" + bucketName);
-            config.set("fs.s3.awsAccessKeyId", accessKey);
-            config.set("fs.s3.awsSecretAccessKey", accessSecret);
-            config.set("hbase.tmp.dir", "/tmp/hbase-${user.name}");
+            config.set("fs.default.name", s3protocol + bucketName);
+            config.set("fs.defaultFS", s3protocol + bucketName);
+            // config.set("fs.s3.awsAccessKeyId", accessKey);
+            // config.set("fs.s3.awsSecretAccessKey", accessSecret);
+            // config.set("hbase.tmp.dir", "/tmp/hbase-${user.name}");
             config.set("hbase.rootdir", s3Url);
             
             for (String arg : args) {
@@ -308,7 +310,7 @@ public class SnapshotS3Util extends Configured implements Tool
      * @return the URL "s3://..."
      */
     private String getS3Url(boolean withCredentials) {
-        if (withCredentials) {
+        if (false) {
             return s3protocol + accessKey + ":" + accessSecret + "@" + bucketName + s3Path;
         }
         

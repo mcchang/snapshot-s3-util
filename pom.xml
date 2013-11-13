@@ -19,8 +19,8 @@
     </licenses>
 
     <properties>
-        <hbaseVersion>0.94.6-cdh4.3.0</hbaseVersion>
-        <hadoopHdfsVersion>2.0.0-cdh4.3.0</hadoopHdfsVersion>
+        <hbaseVersion>0.94.2-cdh4.2.0</hbaseVersion>
+        <hadoopHdfsVersion>2.0.0-cdh4.4.0</hadoopHdfsVersion>
         <hadoopCommonVersion>2.0.0-cdh4.3.0</hadoopCommonVersion>
         <hadoopCoreVersion>2.0.0-mr1-cdh4.3.0</hadoopCoreVersion>
         <awsVersion>1.5.4</awsVersion>
@@ -151,6 +151,14 @@
             <version>${hadoopCoreVersion}</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+    <groupId>jdk.tools</groupId>
+    <artifactId>jdk.tools</artifactId>
+    <scope>system</scope>
+    <systemPath>/usr/lib/jdk1.6.0_45/bin/jar</systemPath>
+    <version>1.6</version>
+</dependency> 
 
         <dependency>
             <groupId>org.apache.hbase</groupId>
