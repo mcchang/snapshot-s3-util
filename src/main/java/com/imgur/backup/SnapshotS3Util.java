@@ -62,7 +62,7 @@ public class SnapshotS3Util extends Configured implements Tool
     private String hdfsPath     = "/hbase";
     private long mappers        = 1;
     private long snapshotTtl    = 0;
-    
+
     // S3 options
     private String accessKey    = null;
     private String accessSecret = null;
@@ -83,17 +83,17 @@ public class SnapshotS3Util extends Configured implements Tool
             printOptions();
             System.exit(-1);
         }
-        
+
         String effectiveSnapshotName = getEffectiveSnapshotName();
         printInfo(effectiveSnapshotName);
-        
+
         if (snapshotTtl > 0) {
             maintainSnapshots(getNormalConfiguration());
         }
-        
+
         if (createSnapshot) {
             LOG.info("Creating snapshot...");
-            
+
             if (createSnapshot(effectiveSnapshotName)) {
                 LOG.info("Successfully created snapshot '{}'", effectiveSnapshotName);
             } else {
@@ -101,10 +101,10 @@ public class SnapshotS3Util extends Configured implements Tool
                 return -1;
             }
         }
-        
+
         if (exportSnapshot) {
             LOG.info("Exporting snapshot '{}' to S3...", effectiveSnapshotName);
-            
+
             if (exportToS3(effectiveSnapshotName)) {
                 LOG.info("Successfully exported snapshot '{}' to S3", effectiveSnapshotName);
             } else {
@@ -113,7 +113,7 @@ public class SnapshotS3Util extends Configured implements Tool
             }
         } else if (importSnapshot) {
             LOG.info("Importing snapshot '{}' from S3...", effectiveSnapshotName);
-            
+
             if (importFromS3(effectiveSnapshotName)) {
                 LOG.info("Successfully imported snapshot '{}' from S3", effectiveSnapshotName);
             } else {
@@ -125,12 +125,12 @@ public class SnapshotS3Util extends Configured implements Tool
         LOG.info("Complete");
         return 0;
     }
-    
+
     private Configuration getNormalConfiguration()
     {
         return getConf();
     }
-    
+
     private void maintainSnapshots(Configuration config)
     {
         HBaseAdmin admin = null;
@@ -139,13 +139,13 @@ public class SnapshotS3Util extends Configured implements Tool
         try {
             admin = new HBaseAdmin(config);
             List<SnapshotDescription> snapshots = admin.listSnapshots();
-            
+
             if (snapshots != null) {
                 for (SnapshotDescription snapshot : snapshots) {
                     long created = snapshot.getCreationTime();
                     long diff = (now - created) / 1000;
                     LOG.debug("Found snapshot '{}'. Created: {}", snapshot.getName(), created);
-                    
+
                     try {
                         if (diff > snapshotTtl) {
                             LOG.info("Deleting old snapshot '{}'. Lived for '{}' secs", snapshot.getName(), diff);
@@ -209,14 +209,14 @@ public class SnapshotS3Util extends Configured implements Tool
         } catch (Exception e) {
             LOG.error("An error occurred while attempting to create snapshot", e);
         }
-        
+
         try {
             admin.close();
         } catch (Exception e) {}
 
         return ret;
     }
-    
+
     /**
      * Export to S3
      * @param snapshotName
@@ -224,7 +224,7 @@ public class SnapshotS3Util extends Configured implements Tool
      */
     private boolean exportToS3(String snapshotName) {
         int ret = -1;
-        String url = getS3Url(true);
+        String url = getS3Url();
         String[] args = {
             "-snapshot",
             snapshotName,
@@ -243,7 +243,7 @@ public class SnapshotS3Util extends Configured implements Tool
 
         return (ret == 0);
     }
-    
+
     /**
      * Import snapshot from S3. Does some config tweaks to actually do an export from S3 to HDFS.
      * @param snapshotName
@@ -251,23 +251,21 @@ public class SnapshotS3Util extends Configured implements Tool
      */
     private boolean importFromS3(String snapshotName) {
         int ret = -1;
-        
+
         try {
-            //Configuration config = HBaseConfiguration.create();
-            // Configuration config = new Configuration();
             Configuration config = getNormalConfiguration();
-            
-            String s3Url = getS3Url(true);
+
+            String s3Url = getS3Url();
             String hdfsUrl = config.get("fs.defaultFS");
-            
+
             if (hdfsUrl == null) {
                 hdfsUrl = config.get("fs.default.name");
-                
+
                 if (hdfsUrl == null) {
                     throw new Exception("Could not determine current fs.defaultFS or fs.default.name");
                 }
             }
-            
+
             hdfsUrl = hdfsUrl + hdfsPath;
             String[] args = {
                 "-snapshot",
@@ -281,22 +279,19 @@ public class SnapshotS3Util extends Configured implements Tool
             // Override dfs configuration to point to S3
             config.set("fs.default.name", s3protocol + bucketName);
             config.set("fs.defaultFS", s3protocol + bucketName);
-            // config.set("fs.s3.awsAccessKeyId", accessKey);
-            // config.set("fs.s3.awsSecretAccessKey", accessSecret);
-            // config.set("hbase.tmp.dir", "/tmp/hbase-${user.name}");
             config.set("hbase.rootdir", s3Url);
-            
+
             for (String arg : args) {
                 LOG.debug("arg: '{}'", arg);
             }
-            
+
             LOG.info("Copying from: {} to {}", s3Url, hdfsUrl);
             Iterator<Map.Entry<String, String>> it = config.iterator();
             while (it.hasNext()) {
                 Map.Entry<String, String> entry = it.next();
                 LOG.debug("{} : '{}'", entry.getKey(), entry.getValue());
             }
-            
+
             ret = ToolRunner.run(config, new ExportSnapshot(), args);
         } catch (Exception e) {
             LOG.error("Exception ocurred while exporting to S3", e);
@@ -304,16 +299,12 @@ public class SnapshotS3Util extends Configured implements Tool
 
         return (ret == 0);
     }
-    
+
     /**
      * Get the snapshot directory path in S3
      * @return the URL "s3://..."
      */
-    private String getS3Url(boolean withCredentials) {
-        if (false) {
-            return s3protocol + accessKey + ":" + accessSecret + "@" + bucketName + s3Path;
-        }
-        
+    private String getS3Url() {
         return s3protocol + bucketName + s3Path;
     }
 
@@ -326,12 +317,12 @@ public class SnapshotS3Util extends Configured implements Tool
         if (snapshotName != null) {
             return snapshotName;
         }
-        
+
         return tableName + "-snapshot-" + DATE_FORMAT.format(new Date());
     }
 
     /**
-     * Get args 
+     * Get args
      * @param args
      * @throws Exception
      */
@@ -339,7 +330,7 @@ public class SnapshotS3Util extends Configured implements Tool
         CommandLineParser parser = new PosixParser();
         CommandLine cmd = null;
         cmd = parser.parse(getOptions(), args);
-        
+
         for (Option option : cmd.getOptions()) {
             switch (option.getId()) {
             case 'c':
@@ -389,11 +380,11 @@ public class SnapshotS3Util extends Configured implements Tool
                 throw new IllegalArgumentException("unexpected option " + option);
             }
         }
-        
+
         if (createSnapshot && StringUtils.isEmpty(tableName)) {
             throw new IllegalArgumentException("Need a table name");
         }
-        
+
         if ((importSnapshot || (exportSnapshot && !createSnapshot)) && StringUtils.isEmpty(snapshotName)) {
             throw new IllegalArgumentException("Need a snapshot name");
         }
@@ -407,7 +398,7 @@ public class SnapshotS3Util extends Configured implements Tool
         int rc = ToolRunner.run(config, new SnapshotS3Util(), args);
         System.exit(rc);
     }
-    
+
     /**
      * Returns the command-line options supported.
      * @return the command-line options
@@ -433,7 +424,7 @@ public class SnapshotS3Util extends Configured implements Tool
             "Use s3n protocol instead of s3. Might work better, but beware of 5GB file limit imposed by S3");
         Option snapshotTtl = new Option("l", "snapshotTtl", true,
             "Delete snapshots older than this value (seconds) from running HBase cluster");
-        
+
         tableName.setRequired(false);
         snapshotName.setRequired(false);
         accessId.setRequired(true);
@@ -444,7 +435,7 @@ public class SnapshotS3Util extends Configured implements Tool
         mappers.setRequired(false);
         useS3n.setRequired(false);
         snapshotTtl.setRequired(false);
-        
+
         Option createSnapshot = new Option("c", "create", false,
             "Create HBase snapshot");
         Option createExportSnapshot = new Option("x", "createExport", false,
@@ -476,7 +467,7 @@ public class SnapshotS3Util extends Configured implements Tool
 
         return options;
     }
-    
+
     /**
      * Print the available options to the display.
      */
