@@ -153,12 +153,12 @@
         </dependency>
 
         <dependency>
-    <groupId>jdk.tools</groupId>
-    <artifactId>jdk.tools</artifactId>
-    <scope>system</scope>
-    <systemPath>/usr/lib/jdk1.6.0_45/bin/jar</systemPath>
-    <version>1.6</version>
-</dependency> 
+            <groupId>jdk.tools</groupId>
+            <artifactId>jdk.tools</artifactId>
+            <scope>system</scope>
+            <systemPath>/usr/lib/jdk1.6.0_45/bin/jar</systemPath>
+            <version>1.6</version>
+        </dependency> 
 
         <dependency>
             <groupId>org.apache.hbase</groupId>
