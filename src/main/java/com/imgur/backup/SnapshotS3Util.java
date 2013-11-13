@@ -427,8 +427,8 @@ public class SnapshotS3Util extends Configured implements Tool
 
         tableName.setRequired(false);
         snapshotName.setRequired(false);
-        accessId.setRequired(true);
-        accessSecret.setRequired(true);
+        accessId.setRequired(false);
+        accessSecret.setRequired(false);
         bucketName.setRequired(true);
         s3Path.setRequired(false);
         hdfsPath.setRequired(false);
